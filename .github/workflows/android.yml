@@ -1,0 +1,52 @@
+name: Android app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['android/**', '.github/workflows/android.yml']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      KESHER_KEYSTORE_PASSWORD: ${{ secrets.KESHER_KEYSTORE_PASSWORD }}
+      KESHER_KEYSTORE_BASE64: ${{ secrets.KESHER_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.14.3
+
+      # Without the signing secrets only a test build (debug APK) can be made
+      - name: Build test APK (signing secrets not set)
+        if: env.KESHER_KEYSTORE_PASSWORD == '' || env.KESHER_KEYSTORE_BASE64 == ''
+        working-directory: android
+        run: |
+          echo "::warning::KESHER_KEYSTORE_BASE64 or KESHER_KEYSTORE_PASSWORD is not set, so this run makes a test APK only. Add both secrets to build the Play Store bundle."
+          gradle assembleDebug --no-daemon
+
+      - name: Build Play Store bundle and APK
+        if: env.KESHER_KEYSTORE_PASSWORD != '' && env.KESHER_KEYSTORE_BASE64 != ''
+        working-directory: android
+        run: |
+          echo "$KESHER_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload-keystore.p12"
+          KESHER_KEYSTORE_FILE="$RUNNER_TEMP/upload-keystore.p12" gradle bundleRelease assembleRelease --no-daemon
+          rm -f "$RUNNER_TEMP/upload-keystore.p12"
+
+      - uses: actions/upload-artifact@v4
+        if: env.KESHER_KEYSTORE_PASSWORD != '' && env.KESHER_KEYSTORE_BASE64 != ''
+        with:
+          name: kesher-google-play-bundle
+          path: android/app/build/outputs/bundle/release/app-release.aab
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kesher-apk
+          path: android/app/build/outputs/apk/**/*.apk

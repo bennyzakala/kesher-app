@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The Play Store needs a higher versionCode for every upload; CI uses the workflow run number
+def buildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+
+android {
+    namespace 'app.netlify.kesher_app.twa'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'app.netlify.kesher_app.twa'
+        minSdk 23
+        targetSdk 36
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
+    }
+
+    signingConfigs {
+        release {
+            // Upload key for the Play Store. It never lives in the repository: CI writes it from the
+            // KESHER_KEYSTORE_BASE64 secret, and the password comes from KESHER_KEYSTORE_PASSWORD.
+            storeFile file(System.getenv('KESHER_KEYSTORE_FILE') ?: 'upload-keystore.p12')
+            storeType 'pkcs12'
+            storePassword System.getenv('KESHER_KEYSTORE_PASSWORD')
+            keyAlias 'upload'
+            keyPassword System.getenv('KESHER_KEYSTORE_PASSWORD')
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}

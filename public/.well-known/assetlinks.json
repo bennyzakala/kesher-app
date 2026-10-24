@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.netlify.kesher_app.twa",
+      "sha256_cert_fingerprints": [
+        "F4:37:E2:FC:EA:04:14:C1:4C:5B:36:5F:DC:3D:A5:07:C7:A9:82:9F:6F:BA:4F:A9:AA:50:41:09:18:BA:07:63"
+      ]
+    }
+  }
+]
