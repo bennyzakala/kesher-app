@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>אין חיבור · Kesher</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body style="margin:0">
+<main class="empty" style="min-height:100vh;justify-content:center">
+  <img src="icons/icon-192.png" alt="" width="84" height="84" style="border-radius:22px">
+  <h2>אין חיבור לאינטרנט</h2>
+  <p>קשר צריך חיבור כדי להציג אנשים והודעות. כשהחיבור יחזור, הדף יתעדכן.</p>
+  <button class="btn primary" onclick="location.reload()">לנסות שוב</button>
+</main>
+<script>addEventListener('online', () => location.reload());</script>
+</body>
+</html>

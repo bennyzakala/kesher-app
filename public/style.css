@@ -344,3 +344,15 @@ nav.tabs .badge { position: absolute; top: 9px; inset-inline-start: calc(50% + 6
 .pill.hot { background: var(--rose-soft); color: var(--rose); }
 .report-reason { margin: 0; font-family: var(--f-serif); font-size: 19px; }
 .h3 svg { width: 20px; height: 20px; vertical-align: -3px; }
+
+/* Install on home screen */
+.install-card { flex-direction: row; align-items: center; gap: 14px; margin-bottom: 14px; }
+.install-card img { border-radius: 14px; flex: none; }
+.install-card > div { flex: 1; min-width: 0; }
+.install-banner { display: flex; align-items: center; gap: 10px; background: var(--accent-soft); border-radius: 16px; padding: 8px 8px 8px 12px; margin: 4px 0 12px; font-weight: 500; font-size: 15px; }
+.install-banner img { border-radius: 10px; flex: none; }
+.install-banner span { flex: 1; min-width: 0; }
+.install-banner .icon-btn { width: 34px; height: 34px; }
+.install-banner .icon-btn svg { width: 18px; height: 18px; }
+.install-steps { margin: 0; padding-inline-start: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.5; }
+.key { display: inline-grid; place-items: center; min-width: 26px; height: 26px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; padding-inline: 4px; }

@@ -15,7 +15,7 @@ import { mailerFromEnv } from './lib/mail.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS = path.join(here, 'netlify/database/migrations');
 const PUBLIC = path.join(here, 'public');
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json' };
 
 async function openDatabase(dataDir, { memory = false, quiet = false } = {}) {
   if (process.env.DATABASE_URL) {

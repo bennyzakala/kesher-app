@@ -165,6 +165,38 @@
   }
   const needsVerify = () => ME && ME.verifyRequired && !ME.emailVerified;
 
+  // ---------- Install on the phone's home screen ----------
+  let installPrompt = null;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; });
+  addEventListener('appinstalled', () => { installPrompt = null; toast('קשר הותקנה במסך הבית'); if (tab === 'me') renderView(); });
+  const isInstalled = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const canOfferInstall = () => !DEMO && !isInstalled();
+  function installCard() {
+    if (!canOfferInstall()) return '';
+    return `<section class="card install-card"><img src="icons/icon-192.png" alt="" width="56" height="56">
+      <div><h2 class="h3">קשר במסך הבית</h2><p class="muted small-text">פותחים בלחיצה אחת, במסך מלא, כמו כל אפליקציה.</p></div>
+      <button type="button" class="btn primary small" id="install-app">התקנה</button></section>`;
+  }
+  async function startInstall() {
+    if (installPrompt) {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      installPrompt = null;
+      if (outcome === 'accepted') return;
+      return;
+    }
+    // iPhone and browsers without an install prompt: show the steps instead
+    const steps = isIOS()
+      ? ['פותחים את האתר ב-<b>Safari</b>.', 'לוחצים על כפתור השיתוף <span class="key">⬆︎</span> בתחתית המסך.', 'בוחרים <b>"הוספה למסך הבית"</b>, ואז <b>"הוספה"</b>.']
+      : ['פותחים את האתר ב-<b>Chrome</b>.', 'לוחצים על התפריט <span class="key">⋮</span> בפינה.', 'בוחרים <b>"התקנת האפליקציה"</b> או <b>"הוספה למסך הבית"</b>.'];
+    sheet(`<h2 class="h2">התקנת קשר</h2>
+      <ol class="install-steps">${steps.map(t => `<li>${t}</li>`).join('')}</ol>
+      <p class="muted small-text">האייקון של קשר יופיע במסך הבית, והאפליקציה תיפתח במסך מלא.</p>
+      <div class="sheet-actions"><button class="btn primary" id="inst-ok">הבנתי</button></div>`, 'התקנת קשר');
+    $('#inst-ok').onclick = closeSheet;
+  }
+
   async function startApp() {
     ME = await api('GET', '/api/me');
     $('#tabs-nav').hidden = false;
@@ -313,12 +345,19 @@
       const c = $('#clear-filters'); if (c) c.onclick = () => { Object.assign(F, { ...DEFAULT_F, city: F.city }); refreshDiscover(); };
       return;
     }
-    v.innerHTML = `<p class="result-line">${DISC.total === 1 ? 'פרופיל אחד' : DISC.total + ' פרופילים'} ${F.city ? `ב<b>${esc(F.city)}</b>` : 'בכל הערים'}${parts.length ? ' · ' + esc(parts.join(' · ')) : ''}</p>
+    const showBanner = canOfferInstall() && !load('kesher-install-dismissed', false);
+    v.innerHTML = `${showBanner ? `<div class="install-banner"><img src="icons/icon-192.png" alt="" width="36" height="36"><span>להתקין את קשר במסך הבית?</span>
+        <button class="btn primary small" id="ib-install">התקנה</button><button class="icon-btn" id="ib-close" aria-label="לא עכשיו">${I.x}</button></div>` : ''}
+      <p class="result-line">${DISC.total === 1 ? 'פרופיל אחד' : DISC.total + ' פרופילים'} ${F.city ? `ב<b>${esc(F.city)}</b>` : 'בכל הערים'}${parts.length ? ' · ' + esc(parts.join(' · ')) : ''}</p>
       <article class="profile entering" id="card" aria-label="פרופיל של ${esc(p.name)}">
         <div class="p-head"><h1 class="p-name">${esc(p.name)}</h1><button class="icon-btn" id="p-more" aria-label="אפשרויות">${I.more}</button></div>
         ${profileBody(p, true)}
       </article>
       <button class="skip" id="skip" aria-label="דילוג על ${esc(p.name)}">${I.x}</button>`;
+    if (showBanner) {
+      $('#ib-install').onclick = startInstall;
+      $('#ib-close').onclick = () => { store('kesher-install-dismissed', true); $('.install-banner').remove(); };
+    }
     v.querySelectorAll('.like-btn').forEach(b => b.onclick = () => openLike(p, b.dataset.kind, +b.dataset.i));
     $('#skip').onclick = async () => {
       $('#skip').disabled = true;
@@ -509,6 +548,7 @@
         <div class="meter" aria-label="הפרופיל מלא ב-${Math.round(filled / 6 * 100)}%"><span style="width:${Math.round(filled / 6 * 100)}%"></span></div>
         <small class="muted">הפרופיל מלא ב-${Math.round(filled / 6 * 100)}%</small></div>
         <button class="btn ghost small" id="me-preview">צפייה</button></div>
+      ${installCard()}
       ${!me.photos.length ? '<p class="notice">כדי להופיע בחיפוש ולראות אחרים, העלו לפחות תמונה אחת שלכם.</p>' : ''}
       <section class="card"><h2 class="h3">התמונות שלי</h2><p class="muted small-text">עד 6 תמונות. הראשונה מופיעה ראשונה בפרופיל ובשיחות.</p>
       <div class="upload">${[0, 1, 2, 3, 4, 5].map(i => {
@@ -536,6 +576,7 @@
           ${legalLinks()}</section>
       </form>`;
     if (me.isAdmin) $('#open-admin').onclick = () => renderAdmin(v);
+    if ($('#install-app')) $('#install-app').onclick = startInstall;
     v.querySelectorAll('input[type=file]').forEach(inp => inp.onchange = async () => {
       const f = inp.files[0]; if (!f) return;
       inp.closest('label').classList.add('busy');
