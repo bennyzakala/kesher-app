@@ -32,7 +32,8 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig signingConfigs.release
+            // Without the signing secrets the bundle is left unsigned, to be signed outside CI
+            signingConfig System.getenv('KESHER_KEYSTORE_PASSWORD') ? signingConfigs.release : null
         }
     }
 

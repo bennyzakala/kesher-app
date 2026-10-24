@@ -6,6 +6,9 @@ on:
     branches: [main]
     paths: ['android/**', '.github/workflows/android.yml']
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -29,8 +32,23 @@ jobs:
         if: env.KESHER_KEYSTORE_PASSWORD == '' || env.KESHER_KEYSTORE_BASE64 == ''
         working-directory: android
         run: |
-          echo "::warning::KESHER_KEYSTORE_BASE64 or KESHER_KEYSTORE_PASSWORD is not set, so this run makes a test APK only. Add both secrets to build the Play Store bundle."
-          gradle assembleDebug --no-daemon
+          echo "::warning::KESHER_KEYSTORE_BASE64 or KESHER_KEYSTORE_PASSWORD is not set, so this run makes a test APK and an unsigned bundle. Sign the bundle with the upload key, or add both secrets."
+          gradle assembleDebug bundleRelease --no-daemon
+
+      # The unsigned bundle goes to the android-builds branch, so it can be fetched with git and signed elsewhere
+      - name: Publish unsigned bundle to the android-builds branch
+        if: env.KESHER_KEYSTORE_PASSWORD == '' || env.KESHER_KEYSTORE_BASE64 == ''
+        run: |
+          out="$RUNNER_TEMP/builds"
+          mkdir -p "$out"
+          cp android/app/build/outputs/bundle/release/app-release.aab "$out/kesher-unsigned-${GITHUB_RUN_NUMBER}.aab"
+          cd "$out"
+          git init -q -b android-builds
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -q -m "Unsigned Play Store bundle from run ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7})"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" android-builds
 
       - name: Build Play Store bundle and APK
         if: env.KESHER_KEYSTORE_PASSWORD != '' && env.KESHER_KEYSTORE_BASE64 != ''
